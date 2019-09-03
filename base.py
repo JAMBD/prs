@@ -2,33 +2,39 @@
 
 import copy
 import numpy as np
-from enum import Enum
+from enum import Enum, auto
 from abc import ABC
 from abc import abstractmethod
 
+
+class GamePhase(Enum):
+    DRAW = auto()
+    ACTION = auto()
+
+
 class DrawActions(Enum):
-    KEEP_CARD_AND_DRAW = 0
-    KEEP_CARD_AND_STOP = 0
-    DISMISS_SHIP = 1
+    DRAW = auto()
+    STOP = auto()
+    DISMISS_SHIP = auto()
 
 
 class TurnActions(Enum):
-    TAKE_CARD = 2
-    EXCHANGE_ADVENTURE = 3
-    END_TURN = 4
-
-
-class Card(object):
-    victory_points = 0 
-    def DrawAction(turn):
-        return turn
+    TAKE_CARD = auto()
+    EXCHANGE_ADVENTURE = auto()
+    END_TURN = auto()
 
 
 class CardTypes(Enum):
-    SHIP = 0
-    TAX = 1
-    ADVENTURE = 2
-    WORKER = 3
+    SHIP = auto()
+    TAX = auto()
+    ADVENTURE = auto()
+    WORKER = auto()
+
+
+class Card(object):
+    card_type = None
+    victory_points = 0
+
 
 
 
@@ -60,7 +66,7 @@ class RealPlayer(Player):
     def StartDraw(self, game_state):
         print ("Player %s is drawing." % self.name)
 
-    def DrawCard(self, game_state, card)->DrawActions:
+    def DrawCard(self, game_state)->DrawActions:
         print ("Current table:")
         print (game_state.table)
         print ("Drew card: %s" % card)
