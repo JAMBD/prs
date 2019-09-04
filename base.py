@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import attr
 import copy
 import numpy as np
 from enum import Enum, auto
@@ -12,29 +13,65 @@ class GamePhase(Enum):
     ACTION = auto()
 
 
-class DrawActions(Enum):
+class DrawAction(Enum):
     DRAW = auto()
     STOP = auto()
     DISMISS_SHIP = auto()
 
 
-class TurnActions(Enum):
+class TurnActionType(Enum):
     TAKE_CARD = auto()
     EXCHANGE_ADVENTURE = auto()
     END_TURN = auto()
 
+@attr.s
+class TurnAction(object):
+    action: TurnActionType = attr.ib()
+    index: int = attr.ib()
 
-class CardTypes(Enum):
-    SHIP = auto()
-    TAX = auto()
-    ADVENTURE = auto()
-    WORKER = auto()
+
+class GameState(object):
+    def __init__(self):
+        self.table = []
+
+    def GetDrawResults(self):
+        return self.table, self.discarded_ships
+
+    def GetPossibleDrawActions(self, player_index):
+        return [DrawAction.STOP]
+
+    def GetPossibleTurns(self, player_index):
+        return [TurnActionType.END_TURN]
+
+    def ApplyTurn(self, player_index, turn):
+        self.table 
 
 
 class Card(object):
-    card_type = None
-    victory_points = 0
+    
+    def __init__(self):
+        self._victory_points = 0
+        self._cost = 0
 
+    @property
+    def cost(self):
+        return self._cost
+
+    @property
+    def victory_points(self):
+        return self._victory_points
+
+    def ApplyDrawChanges(game_state:GameState, acting_player_index)->GameState:
+        """Apply any changed to the gamestate whenthe card is drawn."""
+        pass
+
+    def ApplyTakeChanges(game_state:GameState, acting_player_index)->GameState:
+        """Apply changes when a player takes the card from the table."""
+        pass
+
+    def EnhancePlayerActions(game_state:GameState, acting_player_index)->GameState:
+        """Update the list of possible player actions given the properties of the card."""
+        pass
 
 
 
@@ -51,9 +88,21 @@ class Player(ABC):
         pass
 
     @abstractmethod
-    def DrawCard(self, game_state, card)->DrawActions:
+    def DrawCard(self, game_state, card)->DrawAction:
         """Ask player to decide on a draw action."""
         pass
+
+    @abstractmethod
+    def StartTurn (self, game_state):
+        """Notify player that they are about to have a turn."""
+        pass
+
+    @abstractmethod
+    def TurnAction(self, game_state:GameState)->[TurnAction]:
+        """Ask player to decide on a list of turn actions."""
+        pass
+
+
 
 class RealPlayer(Player):
     def __init__(self, player_index):
@@ -66,10 +115,9 @@ class RealPlayer(Player):
     def StartDraw(self, game_state):
         print ("Player %s is drawing." % self.name)
 
-    def DrawCard(self, game_state)->DrawActions:
+    def DrawCard(self, game_state):
         print ("Current table:")
         print (game_state.table)
-        print ("Drew card: %s" % card)
         possible_actions = game_state.GetPossibleDrawActions(self.player_index)
         for idx, action in enumerate(possible_actions):
             print("  %d: %s" % (idx, action))
@@ -84,27 +132,16 @@ class RealPlayer(Player):
     def StartTurn (self, game_state):
         print ("Player %s's turn." % self.name)
 
+    def TurnAction(self, game_state):
+        return []
+
+
 
 
 def _OthersInList(objs, idx):
     return [objs[i] for i in (np.array(range(1, len(objs))) + idx) % len(objs)]
 
 
-class GameState(object):
-    def __init__(self):
-        self.table = []
-
-    def GetDrawResults(self):
-        return self.table, self.discarded_ships
-
-    def GetPossibleDrawActions(self, player_index):
-        return [DrawActions.KEEP_CARD_AND_STOP]
-
-    def GetPossibleTurns(self, player_index):
-        return [TurnActions.END_TURN]
-
-    def ApplyTurn(self, player_index, turn):
-        self.table 
 
 class Game(object):
     def __init__(self, players):
@@ -142,7 +179,7 @@ class Game(object):
             player.StartDraw(self._GetState())
 
             while self._GetState().GetPossibleDrawActions(idx):
-                player.DrawCard(self._GetState(), Card())
+                player.DrawCard(self._GetState())
 
 
         for other_player in _OthersInList(self._players, idx):
